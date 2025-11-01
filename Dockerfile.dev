@@ -1,0 +1,25 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json ./
+
+# Install all dependencies (including dev dependencies)
+RUN npm ci
+
+# Verify reflect-metadata is installed
+RUN npm list reflect-metadata || npm install reflect-metadata
+
+# Copy source code
+COPY . .
+
+# Expose port
+EXPOSE 3000
+
+# Set environment to development
+ENV NODE_ENV=development
+
+# Start with nodemon for hot reloading
+CMD ["npm", "run", "dev"]
+

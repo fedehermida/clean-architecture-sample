@@ -1,7 +1,13 @@
+import 'reflect-metadata';
+import { injectable } from 'inversify';
 import fastify, { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import fastifyCors from '@fastify/cors';
 import { HttpServer } from '@presentation/http/HttpServer';
 import { HttpRequest, HttpResponse } from '@presentation/http/HttpTypes';
+import { env } from '@infrastructure/config/env';
 
+// Framework & Driver: Fastify HTTP server implementation
+@injectable()
 export class FastifyHttpServer implements HttpServer {
   private app: FastifyInstance;
 
@@ -12,6 +18,31 @@ export class FastifyHttpServer implements HttpServer {
   // Fastify parses JSON by default; keep method for interface symmetry
   useJson(): void {
     // no-op for Fastify
+  }
+
+  async useCors(): Promise<void> {
+    const allowedOrigins = env.FRONTEND_URL
+      ? env.FRONTEND_URL.split(',')
+      : ['http://localhost:3000', 'http://localhost:3001'];
+
+    await this.app.register(fastifyCors, {
+      origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests) in development
+        if (!origin || env.NODE_ENV !== 'production') {
+          callback(null, true);
+          return;
+        }
+        // In production, check against allowed origins
+        if (allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'), false);
+        }
+      },
+      credentials: true,
+      methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+    });
   }
 
   get(path: string, handler: (req: HttpRequest, res: HttpResponse) => Promise<void> | void): void {

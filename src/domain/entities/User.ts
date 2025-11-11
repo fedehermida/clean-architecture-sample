@@ -1,3 +1,4 @@
+// Domain Layer: Core business entity with business rules
 export interface UserProps {
   id: string;
   email: string;

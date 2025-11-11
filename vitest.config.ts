@@ -13,6 +13,7 @@ export default defineConfig({
     alias: {
       '@domain': '/src/domain',
       '@application': '/src/application',
+      '@adapters': '/src/adapters',
       '@infrastructure': '/src/infrastructure',
       '@presentation': '/src/presentation',
       '@shared': '/src/shared'

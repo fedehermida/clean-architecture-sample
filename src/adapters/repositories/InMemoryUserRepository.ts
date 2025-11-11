@@ -1,6 +1,10 @@
+import 'reflect-metadata';
+import { injectable } from 'inversify';
 import { User } from '@domain/entities/User';
 import { UserRepository } from '@domain/repositories/UserRepository';
 
+// Adapter: InMemory implementation of UserRepository (for testing/development)
+@injectable()
 export class InMemoryUserRepository implements UserRepository {
   private usersByEmail = new Map<string, User>();
   private usersById = new Map<string, User>();

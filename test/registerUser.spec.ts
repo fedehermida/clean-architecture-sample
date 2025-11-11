@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { InMemoryUserRepository } from '@infrastructure/repositories/InMemoryUserRepository';
-import { FastPasswordHasher } from '@infrastructure/services/FastPasswordHasher';
+import { InMemoryUserRepository } from '@adapters/repositories/InMemoryUserRepository';
+import { FastPasswordHasher } from '@adapters/services/FastPasswordHasher';
 import { RegisterUser } from '@application/use-cases/RegisterUser';
 
 describe('RegisterUser', () => {

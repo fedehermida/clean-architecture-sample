@@ -16,12 +16,31 @@ This project is a minimal, modern TypeScript starter implementing Clean Architec
 - `lint`: run ESLint
 - `format`: run Prettier
 
-### Structure
-- `src/domain`: entities and repository/service interfaces
-- `src/application`: use-cases and DTOs
-- `src/infrastructure`: concrete implementations (repositories, HTTP adapters, database connections)
-- `src/presentation`: I/O layer (HTTP, CLI, etc.)
-- `src/shared`: cross-cutting utilities
+### Architecture Layers
+
+Following Clean Architecture principles with clear separation of concerns:
+
+**1. Domain (Business Rules - Innermost)**
+- `src/domain/entities/` - Domain entities with business logic
+- `src/domain/repositories/` - Repository interfaces (ports)
+
+**2. Application (Application Business Rules)**
+- `src/application/use-cases/` - Use cases (application services)
+- `src/application/dtos/` - Data Transfer Objects
+- `src/application/services/` - Application service interfaces
+
+**3. Interface Adapters**
+- `src/adapters/repositories/` - Repository implementations (adapting domain ports to infrastructure)
+- `src/adapters/http/controllers/` - HTTP controllers (adapting HTTP to use cases)
+- `src/adapters/services/` - External service implementations
+
+**4. Frameworks & Drivers (Outermost)**
+- `src/infrastructure/http/` - HTTP framework implementations (Express, Fastify)
+- `src/infrastructure/database/` - Database drivers and connection setup (TypeORM, MongoDB)
+- `src/presentation/http/` - HTTP abstractions and types
+
+**5. Shared**
+- `src/shared/` - Cross-cutting utilities (Result type, etc.)
 
 ### Docker
 

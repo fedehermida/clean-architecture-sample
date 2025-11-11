@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { Entity, Column, PrimaryColumn, CreateDateColumn } from 'typeorm';
 
+// Framework & Driver: TypeORM entity (database schema representation)
 @Entity('users')
 export class UserEntity {
   @PrimaryColumn('uuid')

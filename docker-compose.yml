@@ -5,15 +5,15 @@ services:
     image: postgres:16-alpine
     container_name: clean-arch-postgres
     environment:
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-      POSTGRES_DB: ${DB_NAME:-clean_architecture}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
-      - '${DB_PORT:-5432}:5432'
+      - '${DB_PORT}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-clean_architecture}']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
       interval: 5s
       timeout: 5s
       retries: 10
@@ -23,17 +23,17 @@ services:
     image: mongo:7
     container_name: clean-arch-mongodb
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-admin}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
     ports:
-      - '${MONGO_PORT:-27017}:27017'
+      - '${MONGO_PORT}:27017'
     volumes:
       - mongodb_data:/data/db
     healthcheck:
       test: >
         mongosh --quiet
-        -u ${MONGO_INITDB_ROOT_USERNAME:-admin}
-        -p ${MONGO_INITDB_ROOT_PASSWORD:-admin}
+        -u ${MONGO_INITDB_ROOT_USERNAME}
+        -p ${MONGO_INITDB_ROOT_PASSWORD}
         --authenticationDatabase admin
         --eval "db.adminCommand('ping')"
       interval: 5s
@@ -47,7 +47,7 @@ services:
       dockerfile: ${DOCKERFILE:-Dockerfile.dev}
     container_name: clean-arch-app
     ports:
-      - '${PORT:-3000}:3000'
+      - '${PORT}:3000'
     volumes:
       # Mount source code for hot reloading
       - ./src:/app/src
@@ -59,22 +59,24 @@ services:
       - /app/node_modules
       # Also exclude dist to avoid conflicts
       - /app/dist
+    env_file:
+      - .env
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
-      PORT: ${PORT:-3000}
-      # PostgreSQL config
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${PORT}
+      HTTP_SERVER: ${HTTP_SERVER}
+      FRONTEND_URL: ${FRONTEND_URL}
+      # PostgreSQL config (host/port are Docker service names)
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_NAME: ${DB_NAME:-clean_architecture}
-      DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      # MongoDB config
-      MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-admin}@mongodb:27017/${DB_NAME:-clean_architecture}?authSource=admin&directConnection=true
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      # MongoDB config (host/port are Docker service names)
+      MONGO_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongodb:27017/${MONGO_DB_NAME}?authSource=admin&directConnection=true
       MONGO_HOST: mongodb
       MONGO_PORT: 27017
-      MONGO_DB_NAME: ${DB_NAME:-clean_architecture}
-
-      REPOSITORY_TYPE: ${REPOSITORY_TYPE:-mongodb}
+      MONGO_DB_NAME: ${MONGO_DB_NAME}
     depends_on:
       postgres:
         condition: service_healthy

@@ -1,5 +1,3 @@
-import 'reflect-metadata';
-import { injectable } from 'inversify';
 import { admin } from '@infrastructure/database/firestore/connection';
 import {
   AuthenticationService,
@@ -9,7 +7,6 @@ import {
 
 // Adapter: Firebase Authentication implementation
 // Uses Firebase Admin SDK to manage authentication
-@injectable()
 export class FirebaseAuthAdapter implements AuthenticationService {
   private auth = admin.auth();
 

@@ -1,17 +1,13 @@
-import 'reflect-metadata';
-import { injectable, inject } from 'inversify';
 import { DataSource, Repository } from 'typeorm';
-import { User } from '@domain/entities/User';
+import { User, UserRole } from '@domain/entities/User';
 import { UserRepository } from '@domain/repositories/UserRepository';
 import { UserEntity } from '@infrastructure/database/typeorm/UserEntity';
-import { TYPES } from '@infrastructure/di/types';
 
 // Adapter: TypeORM implementation of UserRepository
-@injectable()
 export class TypeOrmUserRepository implements UserRepository {
   private repository: Repository<UserEntity>;
 
-  constructor(@inject(TYPES.DataSource) private readonly dataSource: DataSource) {
+  constructor(dataSource: DataSource) {
     this.repository = dataSource.getRepository(UserEntity);
   }
 

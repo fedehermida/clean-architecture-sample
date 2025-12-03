@@ -1,10 +1,7 @@
-import 'reflect-metadata';
-import { injectable } from 'inversify';
 import { Product } from '@domain/entities/Product';
 import { ProductRepository } from '@domain/repositories/ProductRepository';
 
 // Adapter: InMemory implementation of ProductRepository (for testing/development)
-@injectable()
 export class InMemoryProductRepository implements ProductRepository {
   private productsById = new Map<string, Product>();
 

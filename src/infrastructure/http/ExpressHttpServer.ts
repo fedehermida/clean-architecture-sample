@@ -1,5 +1,3 @@
-import 'reflect-metadata';
-import { injectable } from 'inversify';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { HttpServer } from '@presentation/http/HttpServer';
@@ -7,7 +5,6 @@ import { HttpRequest, HttpResponse } from '@presentation/http/HttpTypes';
 import { env } from '@infrastructure/config/env';
 
 // Framework & Driver: Express HTTP server implementation
-@injectable()
 export class ExpressHttpServer implements HttpServer {
   private app = express();
 

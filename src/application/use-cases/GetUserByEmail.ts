@@ -19,7 +19,9 @@ export class GetUserByEmail {
       return err(new Error(parse.error.issues.map((i) => i.message).join(', ')));
     }
 
-    const user = await this.userRepository.findByEmail(parse.data.email);
+    // Normalize email to lowercase for case-insensitive lookup
+    const normalizedEmail = parse.data.email.toLowerCase().trim();
+    const user = await this.userRepository.findByEmail(normalizedEmail);
     if (!user) {
       return err(new Error('User not found'));
     }

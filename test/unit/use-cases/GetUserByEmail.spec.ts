@@ -31,7 +31,7 @@ describe('GetUserByEmail Use Case', () => {
       }
     });
 
-    it('is case-sensitive for email lookup', async () => {
+    it('is case-insensitive for email lookup', async () => {
       const user = User.create({
         id: 'user-case',
         email: 'CaseSensitive@example.com',
@@ -39,13 +39,16 @@ describe('GetUserByEmail Use Case', () => {
       });
       await repo.save(user);
 
-      // Exact match works
+      // Email is normalized to lowercase in User entity
+      // So the stored email is 'casesensitive@example.com'
+
+      // Original case works (normalized)
       const exactResult = await usecase.execute({ email: 'CaseSensitive@example.com' });
       expect(exactResult.ok).toBe(true);
 
-      // Different case fails (repository is case-sensitive)
+      // Different case also works (emails are case-insensitive)
       const differentCaseResult = await usecase.execute({ email: 'casesensitive@example.com' });
-      expect(differentCaseResult.ok).toBe(false);
+      expect(differentCaseResult.ok).toBe(true);
     });
   });
 

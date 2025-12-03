@@ -1,11 +1,8 @@
-import 'reflect-metadata';
-import { injectable } from 'inversify';
-import { User } from '@domain/entities/User';
+import { User, UserRole } from '@domain/entities/User';
 import { UserRepository } from '@domain/repositories/UserRepository';
 import { firestore } from '@infrastructure/database/firestore/connection';
 
 // Adapter: Firestore implementation of UserRepository
-@injectable()
 export class FirebaseUserRepository implements UserRepository {
   private readonly collection = firestore.collection('users');
 

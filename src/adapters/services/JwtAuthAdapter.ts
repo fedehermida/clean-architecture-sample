@@ -1,14 +1,9 @@
-import 'reflect-metadata';
-import { injectable, inject } from 'inversify';
 import { createHmac, randomUUID } from 'node:crypto';
 import {
   AuthenticationService,
   AuthToken,
   AuthUser,
 } from '@application/services/AuthenticationService';
-import { UserRepository } from '@domain/repositories/UserRepository';
-import { PasswordHasher } from '@application/services/PasswordHasher';
-import { TYPES } from '@infrastructure/di/types';
 
 interface JwtPayload {
   sub: string; // user id
@@ -18,18 +13,16 @@ interface JwtPayload {
 }
 
 // Adapter: Simple JWT Authentication implementation
-// Uses the existing UserRepository and PasswordHasher for user management
-// Demonstrates how auth can integrate with domain repositories
-@injectable()
+// Self-contained JWT implementation without external dependencies
 export class JwtAuthAdapter implements AuthenticationService {
   private readonly secret: string;
   private readonly expiresInMs = 60 * 60 * 1000; // 1 hour
   private revokedTokens = new Set<string>();
+  // In-memory user storage for demo (production would use a database)
+  private users = new Map<string, { id: string; email: string; passwordHash: string }>();
+  private usersByEmail = new Map<string, { id: string; email: string; passwordHash: string }>();
 
-  constructor(
-    @inject(TYPES.UserRepository) private readonly userRepository: UserRepository,
-    @inject(TYPES.PasswordHasher) private readonly passwordHasher: PasswordHasher,
-  ) {
+  constructor() {
     // In production, this should come from environment variables
     this.secret = process.env['JWT_SECRET'] ?? 'clean-architecture-demo-secret';
   }
@@ -101,14 +94,19 @@ export class JwtAuthAdapter implements AuthenticationService {
     }
   }
 
+  // Simple hash for demo purposes
+  private hashPassword(password: string): string {
+    return createHmac('sha256', this.secret).update(password).digest('hex');
+  }
+
   async authenticate(email: string, password: string): Promise<AuthToken | null> {
-    const user = await this.userRepository.findByEmail(email);
+    const user = this.usersByEmail.get(email);
     if (!user) {
       return null;
     }
 
     // Verify password
-    const passwordHash = await this.passwordHasher.hash(password);
+    const passwordHash = this.hashPassword(password);
     if (user.passwordHash !== passwordHash) {
       return null;
     }
@@ -149,18 +147,34 @@ export class JwtAuthAdapter implements AuthenticationService {
   }
 
   async createUser(email: string, password: string): Promise<string> {
-    // This adapter delegates user creation to the repository
-    // The user should be created via RegisterUser use case
-    // This method just returns a new UUID for consistency
-    const existing = await this.userRepository.findByEmail(email);
-    if (existing) {
+    if (this.usersByEmail.has(email)) {
       throw new Error('User already exists');
     }
-    return randomUUID();
+
+    const id = randomUUID();
+    const passwordHash = this.hashPassword(password);
+    const user = { id, email, passwordHash };
+
+    this.users.set(id, user);
+    this.usersByEmail.set(email, user);
+
+    return id;
   }
 
   async deleteUser(userId: string): Promise<void> {
-    // Delegate to repository
-    await this.userRepository.deleteById(userId);
+    const user = this.users.get(userId);
+    if (user) {
+      this.users.delete(userId);
+      this.usersByEmail.delete(user.email);
+      // Revoke all tokens for this user by clearing revoked set and adding them back
+      // In production, you'd track tokens per user
+    }
+  }
+
+  // Helper method for testing: clear all data
+  clear(): void {
+    this.users.clear();
+    this.usersByEmail.clear();
+    this.revokedTokens.clear();
   }
 }

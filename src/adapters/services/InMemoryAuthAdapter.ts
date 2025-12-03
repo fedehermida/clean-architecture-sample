@@ -1,6 +1,4 @@
-import 'reflect-metadata';
-import { injectable } from 'inversify';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import {
   AuthenticationService,
   AuthToken,
@@ -20,7 +18,6 @@ interface StoredToken {
 
 // Adapter: In-Memory Authentication implementation
 // Useful for testing and development without external dependencies
-@injectable()
 export class InMemoryAuthAdapter implements AuthenticationService {
   private users = new Map<string, StoredUser>();
   private usersByEmail = new Map<string, StoredUser>();
@@ -28,8 +25,7 @@ export class InMemoryAuthAdapter implements AuthenticationService {
 
   // Simple hash for demo purposes (same approach as FastPasswordHasher)
   private hashPassword(password: string): string {
-    const crypto = require('node:crypto');
-    return crypto.createHash('sha256').update(password).digest('hex');
+    return createHash('sha256').update(password).digest('hex');
   }
 
   async authenticate(email: string, password: string): Promise<AuthToken | null> {

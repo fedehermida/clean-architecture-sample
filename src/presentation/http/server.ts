@@ -1,15 +1,19 @@
 // Load environment variables from .env file (must be first import)
 import 'dotenv/config';
-import 'reflect-metadata';
-// Infrastructure: Dependency Injection
-import { createContainer } from '@infrastructure/di/container';
+
+// Infrastructure: Dependency Injection (Pure factory functions - no reflect-metadata needed)
+import { bootstrap, AppDependencies } from '@infrastructure/di/factories';
 // Infrastructure: Configuration
 import { env } from '@infrastructure/config/env';
 
+let appDependencies: AppDependencies | null = null;
+
 async function startServer() {
-  // Initialize dependency injection container and resolve dependencies
-  const { httpServer: app, userController, authController, productController } =
-    await createContainer();
+  // Initialize application with factory-based dependency injection
+  // No Inversify, no decorators - just pure TypeScript factory functions
+  appDependencies = await bootstrap();
+
+  const { httpServer: app, userController, authController, productController } = appDependencies;
 
   // Configure HTTP server
   const corsResult = app.useCors();
@@ -43,6 +47,19 @@ async function startServer() {
     console.log(`HTTP server listening on http://localhost:${env.PORT}`);
   });
 }
+
+// Graceful shutdown
+async function shutdown() {
+  // eslint-disable-next-line no-console
+  console.log('\nShutting down gracefully...');
+  if (appDependencies) {
+    await appDependencies.cleanup();
+  }
+  process.exit(0);
+}
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
 
 startServer().catch((error) => {
   // eslint-disable-next-line no-console

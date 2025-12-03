@@ -1,11 +1,8 @@
-import 'reflect-metadata';
-import { injectable } from 'inversify';
-import { User } from '@domain/entities/User';
+import { User, UserRole } from '@domain/entities/User';
 import { UserRepository } from '@domain/repositories/UserRepository';
 import { UserModel, UserDocument } from '@infrastructure/database/mongoose/UserModel';
 
 // Adapter: MongoDB implementation of UserRepository using Mongoose ODM
-@injectable()
 export class MongoUserRepository implements UserRepository {
   async findById(id: string): Promise<User | null> {
     const document = await UserModel.findById(id).exec();

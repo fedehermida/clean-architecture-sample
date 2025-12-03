@@ -1,5 +1,3 @@
-import 'reflect-metadata';
-import { injectable } from 'inversify';
 import fastify, { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import fastifyCors from '@fastify/cors';
 import { HttpServer } from '@presentation/http/HttpServer';
@@ -7,7 +5,6 @@ import { HttpRequest, HttpResponse } from '@presentation/http/HttpTypes';
 import { env } from '@infrastructure/config/env';
 
 // Framework & Driver: Fastify HTTP server implementation
-@injectable()
 export class FastifyHttpServer implements HttpServer {
   private app: FastifyInstance;
 

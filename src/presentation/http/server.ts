@@ -3,21 +3,13 @@ import 'dotenv/config';
 import 'reflect-metadata';
 // Infrastructure: Dependency Injection
 import { createContainer } from '@infrastructure/di/container';
-import { TYPES } from '@infrastructure/di/types';
 // Infrastructure: Configuration
 import { env } from '@infrastructure/config/env';
-// Presentation: HTTP abstractions
-import { HttpServer } from '@presentation/http/HttpServer';
-// Adapters: Controllers
-import { UserController } from '@adapters/http/controllers/UserController';
 
 async function startServer() {
-  // Initialize dependency injection container
-  const container = await createContainer();
-
-  // Resolve dependencies from container
-  const app = container.get<HttpServer>(TYPES.HttpServer);
-  const userController = container.get<UserController>(TYPES.UserController);
+  // Initialize dependency injection container and resolve dependencies
+  const { httpServer: app, userController, authController, productController } =
+    await createContainer();
 
   // Configure HTTP server
   const corsResult = app.useCors();
@@ -26,10 +18,24 @@ async function startServer() {
   }
   app.useJson();
 
-  // Wire up routes using adapters (controllers)
+  // User routes
   app.post('/register', (req, res) => userController.register(req, res));
+  app.get('/users', (req, res) => userController.getByEmail(req, res));
   app.get('/users/:id', (req, res) => userController.getById(req, res));
   app.delete('/users/:id', (req, res) => userController.delete(req, res));
+
+  // Auth routes
+  app.post('/auth/login', (req, res) => authController.login(req, res));
+  app.post('/auth/logout', (req, res) => authController.logout(req, res));
+  app.get('/auth/me', (req, res) => authController.me(req, res));
+
+  // Product routes
+  app.post('/products', (req, res) => productController.create(req, res));
+  app.get('/products', (req, res) => productController.list(req, res));
+  app.get('/products/:id', (req, res) => productController.getById(req, res));
+  app.delete('/products/:id', (req, res) => productController.delete(req, res));
+
+  // Health check
   app.get('/health', (req, res) => userController.healthCheck(res));
 
   app.listen(env.PORT, () => {

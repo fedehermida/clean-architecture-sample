@@ -44,7 +44,12 @@ export class ExpressHttpServer implements HttpServer {
 
   get(path: string, handler: (req: HttpRequest, res: HttpResponse) => Promise<void> | void): void {
     this.app.get(path, async (req: Request, res: Response) => {
-      const httpReq: HttpRequest = { body: req.body, params: req.params as Record<string, string> };
+      const httpReq: HttpRequest = {
+        body: req.body,
+        params: req.params as Record<string, string>,
+        query: req.query as Record<string, unknown>,
+        headers: req.headers as Record<string, string | string[] | undefined>,
+      };
       const httpRes: HttpResponse = {
         status: (code: number) => {
           res.status(code);
@@ -63,7 +68,12 @@ export class ExpressHttpServer implements HttpServer {
 
   post(path: string, handler: (req: HttpRequest, res: HttpResponse) => Promise<void> | void): void {
     this.app.post(path, async (req: Request, res: Response) => {
-      const httpReq: HttpRequest = { body: req.body, params: req.params as Record<string, string> };
+      const httpReq: HttpRequest = {
+        body: req.body,
+        params: req.params as Record<string, string>,
+        query: req.query as Record<string, unknown>,
+        headers: req.headers as Record<string, string | string[] | undefined>,
+      };
       const httpRes: HttpResponse = {
         status: (code: number) => {
           res.status(code);
@@ -85,7 +95,12 @@ export class ExpressHttpServer implements HttpServer {
     handler: (req: HttpRequest, res: HttpResponse) => Promise<void> | void,
   ): void {
     this.app.delete(path, async (req: Request, res: Response) => {
-      const httpReq: HttpRequest = { body: req.body, params: req.params as Record<string, string> };
+      const httpReq: HttpRequest = {
+        body: req.body,
+        params: req.params as Record<string, string>,
+        query: req.query as Record<string, unknown>,
+        headers: req.headers as Record<string, string | string[] | undefined>,
+      };
       const httpRes: HttpResponse = {
         status: (code: number) => {
           res.status(code);

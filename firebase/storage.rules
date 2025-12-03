@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.storage {
+  match /b/{bucket}/o {
+    // Allow all reads and writes for development/testing
+    match /{allPaths=**} {
+      allow read, write: if true;
+    }
+  }
+}
+

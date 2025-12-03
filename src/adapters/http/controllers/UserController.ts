@@ -1,20 +1,18 @@
-import 'reflect-metadata';
-import { injectable, inject } from 'inversify';
 import { HttpRequest, HttpResponse } from '@presentation/http/HttpTypes';
 import { RegisterUser } from '@application/use-cases/RegisterUser';
 import { GetUserById } from '@application/use-cases/GetUserById';
+import { GetUserByEmail } from '@application/use-cases/GetUserByEmail';
 import { DeleteUser } from '@application/use-cases/DeleteUser';
 import { UserRepository } from '@domain/repositories/UserRepository';
-import { TYPES } from '@infrastructure/di/types';
 
 // Interface Adapter: HTTP controller adapting HTTP layer to Application layer (use cases)
-@injectable()
 export class UserController {
   constructor(
-    @inject(TYPES.RegisterUser) private readonly registerUser: RegisterUser,
-    @inject(TYPES.GetUserById) private readonly getUserById: GetUserById,
-    @inject(TYPES.DeleteUser) private readonly deleteUser: DeleteUser,
-    @inject(TYPES.UserRepository) private readonly userRepository: UserRepository,
+    private readonly registerUser: RegisterUser,
+    private readonly getUserById: GetUserById,
+    private readonly getUserByEmail: GetUserByEmail,
+    private readonly deleteUser: DeleteUser,
+    private readonly userRepository: UserRepository,
   ) {}
 
   async register(req: HttpRequest, res: HttpResponse): Promise<void> {
@@ -33,7 +31,17 @@ export class UserController {
       return;
     }
 
-    const result = await this.getUserById.execute(userId);
+    const result = await this.getUserById.execute({ userId });
+    if (!result.ok) {
+      res.status(404).json({ error: result.error.message });
+      return;
+    }
+    res.status(200).json(result.value);
+  }
+
+  async getByEmail(req: HttpRequest, res: HttpResponse): Promise<void> {
+    const email = req.query['email'] as string;
+    const result = await this.getUserByEmail.execute({ email });
     if (!result.ok) {
       res.status(404).json({ error: result.error.message });
       return;
@@ -42,13 +50,8 @@ export class UserController {
   }
 
   async delete(req: HttpRequest, res: HttpResponse): Promise<void> {
-    const userId = req.params['id'];
-    if (!userId) {
-      res.status(400).json({ error: 'User ID is required' });
-      return;
-    }
-
-    const result = await this.deleteUser.execute(userId);
+    const userId = req.params['id'] as string;
+    const result = await this.deleteUser.execute({ userId });
     if (!result.ok) {
       res.status(404).json({ error: result.error.message });
       return;

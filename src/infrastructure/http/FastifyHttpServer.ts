@@ -50,6 +50,8 @@ export class FastifyHttpServer implements HttpServer {
       const httpReq: HttpRequest = {
         body: request.body,
         params: (request.params as Record<string, string>) ?? {},
+        query: (request.query as Record<string, unknown>) ?? {},
+        headers: request.headers as Record<string, string | string[] | undefined>,
       };
       const httpRes: HttpResponse = {
         status: (code: number) => {
@@ -72,6 +74,8 @@ export class FastifyHttpServer implements HttpServer {
       const httpReq: HttpRequest = {
         body: request.body,
         params: (request.params as Record<string, string>) ?? {},
+        query: (request.query as Record<string, unknown>) ?? {},
+        headers: request.headers as Record<string, string | string[] | undefined>,
       };
       const httpRes: HttpResponse = {
         status: (code: number) => {
@@ -97,6 +101,8 @@ export class FastifyHttpServer implements HttpServer {
       const httpReq: HttpRequest = {
         body: request.body,
         params: (request.params as Record<string, string>) ?? {},
+        query: (request.query as Record<string, unknown>) ?? {},
+        headers: request.headers as Record<string, string | string[] | undefined>,
       };
       const httpRes: HttpResponse = {
         status: (code: number) => {

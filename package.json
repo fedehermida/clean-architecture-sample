@@ -8,9 +8,12 @@
   },
   "scripts": {
     "dev": "nodemon src/presentation/http/server.ts",
+    "dev:debug": "nodemon --config nodemon.debug.json src/presentation/http/server.ts",
     "start": "node dist/presentation/http/server.js",
     "build": "tsc -p tsconfig.json",
     "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "lint": "eslint .",
     "format": "prettier --write .",
     "prepare": "husky"
@@ -22,6 +25,7 @@
     "dotenv": "^17.2.3",
     "express": "^4.19.2",
     "fastify": "^4.28.1",
+    "firebase-admin": "^13.0.2",
     "inversify": "^7.10.4",
     "inversify-binding-decorators": "^4.0.0",
     "mongodb": "^6.10.0",

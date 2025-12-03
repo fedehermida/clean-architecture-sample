@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Clean Architecture API",
-    "description": "API collection for Clean Architecture TypeScript project",
+    "description": "API collection for Clean Architecture TypeScript project.\n\nDemonstrates:\n- User Management (CRUD)\n- Authentication (Login/Logout)\n- Product Management (CRUD)\n\nSwappable infrastructure:\n- Repositories: InMemory, TypeORM, Mongoose, Firebase\n- Auth Providers: InMemory, Firebase, JWT\n- HTTP Servers: Express, Fastify",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -42,99 +42,11 @@
               "host": ["{{baseUrl}}"],
               "path": ["register"]
             },
-            "description": "Register a new user with email and password"
-          },
-          "response": [
-            {
-              "name": "Success",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/register",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["register"]
-                }
-              },
-              "status": "Created",
-              "code": 201,
-              "body": "{\n  \"userId\": \"123e4567-e89b-12d3-a456-426614174000\"\n}"
-            },
-            {
-              "name": "Validation Error",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"email\": \"invalid-email\",\n  \"password\": \"123\"\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/register",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["register"]
-                }
-              },
-              "status": "Bad Request",
-              "code": 400,
-              "body": "{\n  \"error\": \"Invalid email, String must contain at least 8 character(s)\"\n}"
-            },
-            {
-              "name": "Duplicate Email",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"email\": \"existing@example.com\",\n  \"password\": \"password123\"\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/register",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["register"]
-                }
-              },
-              "status": "Bad Request",
-              "code": 400,
-              "body": "{\n  \"error\": \"Email already in use\"\n}"
-            }
-          ]
+            "description": "Register a new user with email and password (min 8 characters)"
+          }
         },
         {
           "name": "Get User By ID",
-          "event": [
-            {
-              "listen": "prerequest",
-              "script": {
-                "exec": [
-                  "// Use saved userId or use a test ID",
-                  "if (!pm.variables.get('userId')) {",
-                  "    pm.variables.set('userId', '123e4567-e89b-12d3-a456-426614174000');",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
@@ -143,57 +55,30 @@
               "host": ["{{baseUrl}}"],
               "path": ["users", "{{userId}}"]
             },
-            "description": "Retrieve a user by their ID"
-          },
-          "response": [
-            {
-              "name": "Success",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/users/123e4567-e89b-12d3-a456-426614174000",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["users", "123e4567-e89b-12d3-a456-426614174000"]
+            "description": "Retrieve a user by their UUID"
+          }
+        },
+        {
+          "name": "Get User By Email",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users?email=user@example.com",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "user@example.com"
                 }
-              },
-              "status": "OK",
-              "code": 200,
-              "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174000\",\n  \"email\": \"user@example.com\",\n  \"createdAt\": \"2024-01-01T00:00:00.000Z\"\n}"
+              ]
             },
-            {
-              "name": "User Not Found",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/users/00000000-0000-0000-0000-000000000000",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["users", "00000000-0000-0000-0000-000000000000"]
-                }
-              },
-              "status": "Not Found",
-              "code": 404,
-              "body": "{\n  \"error\": \"User not found\"\n}"
-            }
-          ]
+            "description": "Retrieve a user by their email address"
+          }
         },
         {
           "name": "Delete User",
-          "event": [
-            {
-              "listen": "prerequest",
-              "script": {
-                "exec": [
-                  "// Use saved userId or use a test ID",
-                  "if (!pm.variables.get('userId')) {",
-                  "    pm.variables.set('userId', '123e4567-e89b-12d3-a456-426614174000');",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
           "request": {
             "method": "DELETE",
             "header": [],
@@ -202,43 +87,205 @@
               "host": ["{{baseUrl}}"],
               "path": ["users", "{{userId}}"]
             },
-            "description": "Delete a user by their ID"
-          },
-          "response": [
-            {
-              "name": "Success",
-              "originalRequest": {
-                "method": "DELETE",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/users/123e4567-e89b-12d3-a456-426614174000",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["users", "123e4567-e89b-12d3-a456-426614174000"]
-                }
-              },
-              "status": "No Content",
-              "code": 204,
-              "body": ""
-            },
-            {
-              "name": "User Not Found",
-              "originalRequest": {
-                "method": "DELETE",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/users/00000000-0000-0000-0000-000000000000",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["users", "00000000-0000-0000-0000-000000000000"]
-                }
-              },
-              "status": "Not Found",
-              "code": 404,
-              "body": "{\n  \"error\": \"User not found\"\n}"
-            }
-          ]
+            "description": "Delete a user by their UUID"
+          }
         }
       ],
-      "description": "User management endpoints"
+      "description": "User management endpoints (CRUD operations)"
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('authToken', jsonData.token);",
+                  "    console.log('Auth token saved');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Authenticate user and receive a token"
+          }
+        },
+        {
+          "name": "Get Current User (Me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Get the currently authenticated user's information"
+          }
+        },
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.collectionVariables.unset('authToken');",
+                  "    console.log('Auth token cleared');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Invalidate the current authentication token"
+          }
+        }
+      ],
+      "description": "Authentication endpoints (Login/Logout/Me)"
+    },
+    {
+      "name": "Product Management",
+      "item": [
+        {
+          "name": "Create Product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('productId', jsonData.productId);",
+                  "    console.log('Product ID saved:', jsonData.productId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sample Product\",\n  \"description\": \"A great product for demonstration\",\n  \"price\": 99.99,\n  \"stock\": 100\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"]
+            },
+            "description": "Create a new product"
+          }
+        },
+        {
+          "name": "List All Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"]
+            },
+            "description": "Retrieve all products"
+          }
+        },
+        {
+          "name": "Get Product By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "{{productId}}"]
+            },
+            "description": "Retrieve a product by its UUID"
+          }
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "{{productId}}"]
+            },
+            "description": "Delete a product by its UUID"
+          }
+        }
+      ],
+      "description": "Product management endpoints (CRUD operations)"
+    },
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Check API health and database connectivity"
+          }
+        }
+      ],
+      "description": "Health check endpoint"
     }
   ],
   "variable": [
@@ -251,7 +298,16 @@
       "key": "userId",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "productId",
+      "value": "",
+      "type": "string"
     }
   ]
 }
-

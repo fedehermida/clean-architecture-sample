@@ -25,4 +25,8 @@ pnpm-debug.log*
 coverage/
 .vitest/
 
+# Firebase Emulator Data
+firebase/data/
+firebase/cache/
+firebase/.config/
 

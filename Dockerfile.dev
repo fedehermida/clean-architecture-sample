@@ -14,12 +14,15 @@ RUN npm list reflect-metadata || npm install reflect-metadata
 # Copy source code
 COPY . .
 
-# Expose port
+# Expose application port
 EXPOSE 3000
+
+# Expose Node.js debugger port
+EXPOSE 9229
 
 # Set environment to development
 ENV NODE_ENV=development
 
-# Start with nodemon for hot reloading
+# Default: Start with nodemon for hot reloading (use dev:debug for debugging)
 CMD ["npm", "run", "dev"]
 

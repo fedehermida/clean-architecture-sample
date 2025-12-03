@@ -1,0 +1,10 @@
+{
+  "watch": ["src"],
+  "ext": "ts,js,json",
+  "ignore": ["src/**/*.spec.ts", "test/**", "node_modules/**"],
+  "exec": "node --import tsx --inspect=0.0.0.0:9229 src/presentation/http/server.ts",
+  "env": {
+    "NODE_ENV": "development"
+  },
+  "legacyWatch": true
+}

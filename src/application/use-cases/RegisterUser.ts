@@ -2,9 +2,18 @@ import { randomUUID } from 'node:crypto';
 import { UserRepository } from '@domain/repositories/UserRepository';
 import { User } from '@domain/entities/User';
 import { PasswordHasher } from '@application/services/PasswordHasher';
-import { RegisterUserDTO, RegisterUserSchema } from '@application/dtos/RegisterUserDTO';
 import { err, ok, Result } from '@shared/Result';
+import { z } from 'zod';
 
+// Input validation schema
+export const RegisterUserSchema = z.object({
+  email: z.string().email('Invalid email format'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+});
+
+export type RegisterUserDTO = z.infer<typeof RegisterUserSchema>;
+
+// Application Layer: Use case implementing application business rules
 export class RegisterUser {
   constructor(
     private readonly userRepository: UserRepository,

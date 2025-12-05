@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 // Input validation schema
 export const CreateProductSchema = z.object({
+  userId: z.string().uuid('Invalid user ID format'),
   name: z.string().min(1, 'Name is required').max(255, 'Name is too long'),
   description: z.string().max(1000, 'Description is too long').default(''),
   price: z.number().positive('Price must be positive'),
@@ -26,6 +27,7 @@ export class CreateProduct {
 
     const product = Product.create({
       id: randomUUID(),
+      userId: parse.data.userId,
       name: parse.data.name,
       description: parse.data.description,
       price: parse.data.price,

@@ -259,6 +259,63 @@
           }
         },
         {
+          "name": "Get User With Products",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 or 404', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Response has user data', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.id).to.be.a('string');",
+                  "        pm.expect(jsonData.email).to.be.a('string');",
+                  "    });",
+                  "    ",
+                  "    pm.test('Response has products array', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.products).to.be.an('array');",
+                  "    });",
+                  "    ",
+                  "    pm.test('Products have required fields', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        if (jsonData.products.length > 0) {",
+                  "            const product = jsonData.products[0];",
+                  "            pm.expect(product).to.have.property('id');",
+                  "            pm.expect(product).to.have.property('name');",
+                  "            pm.expect(product).to.have.property('price');",
+                  "            pm.expect(product).to.have.property('stock');",
+                  "        }",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 404) {",
+                  "    pm.test('Error message is present', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.error).to.be.a('string');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "products"]
+            },
+            "description": "Retrieve a user along with all their associated products.\n\n**Path Parameters:**\n- `id` (string, required): User UUID\n\n**Response (200 OK):**\n```json\n{\n  \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"email\": \"user@example.com\",\n  \"createdAt\": \"2024-12-05T10:30:00.000Z\",\n  \"products\": [\n    {\n      \"id\": \"550e8400-e29b-41d4-a716-446655440001\",\n      \"name\": \"Sample Product\",\n      \"description\": \"A great product\",\n      \"price\": 99.99,\n      \"stock\": 100,\n      \"createdAt\": \"2024-12-05T10:30:00.000Z\",\n      \"updatedAt\": \"2024-12-05T10:30:00.000Z\"\n    }\n  ]\n}\n```\n\n**Error Response (404 Not Found):**\n```json\n{\n  \"error\": \"User not found\"\n}\n```"
+          }
+        },
+        {
           "name": "Delete User",
           "event": [
             {
@@ -302,7 +359,7 @@
           }
         }
       ],
-      "description": "User management endpoints (CRUD operations)\n\n**Endpoints:**\n- POST /register - Create new user\n- GET /users/:id - Get user by ID\n- GET /users?email=... - Get user by email\n- DELETE /users/:id - Delete user"
+      "description": "User management endpoints (CRUD operations)\n\n**Endpoints:**\n- POST /register - Create new user\n- GET /users/:id - Get user by ID\n- GET /users/:id/products - Get user with their products\n- GET /users?email=... - Get user by email\n- DELETE /users/:id - Delete user"
     },
     {
       "name": "Authentication",
@@ -512,14 +569,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Sample Product\",\n  \"description\": \"A great product for demonstration\",\n  \"price\": 99.99,\n  \"stock\": 100\n}"
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"name\": \"Sample Product\",\n  \"description\": \"A great product for demonstration\",\n  \"price\": 99.99,\n  \"stock\": 100\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/products",
               "host": ["{{baseUrl}}"],
               "path": ["products"]
             },
-            "description": "Create a new product.\n\n**Request Body:**\n- `name` (string, required): Product name (1-255 characters)\n- `description` (string, optional): Product description (max 1000 characters)\n- `price` (number, required): Price must be positive (minimum 0.01)\n- `stock` (integer, required): Available stock quantity (minimum 0)\n\n**Response (201 Created):**\n```json\n{\n  \"productId\": \"550e8400-e29b-41d4-a716-446655440001\"\n}\n```\n\n**Error Response (400 Bad Request):**\n```json\n{\n  \"error\": \"Validation error message\"\n}\n```"
+            "description": "Create a new product associated with a user.\n\n**Request Body:**\n- `userId` (string, required): UUID of the user who owns this product\n- `name` (string, required): Product name (1-255 characters)\n- `description` (string, optional): Product description (max 1000 characters)\n- `price` (number, required): Price must be positive (minimum 0.01)\n- `stock` (integer, required): Available stock quantity (minimum 0)\n\n**Response (201 Created):**\n```json\n{\n  \"productId\": \"550e8400-e29b-41d4-a716-446655440001\"\n}\n```\n\n**Error Response (400 Bad Request):**\n```json\n{\n  \"error\": \"Validation error message\"\n}\n```"
           }
         },
         {
@@ -558,7 +615,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Basic Product\",\n  \"price\": 19.99,\n  \"stock\": 50\n}"
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"name\": \"Basic Product\",\n  \"price\": 19.99,\n  \"stock\": 50\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/products",
@@ -599,7 +656,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Out of Stock Item\",\n  \"description\": \"This product has no stock available\",\n  \"price\": 49.99,\n  \"stock\": 0\n}"
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"name\": \"Out of Stock Item\",\n  \"description\": \"This product has no stock available\",\n  \"price\": 49.99,\n  \"stock\": 0\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/products",
@@ -1092,7 +1149,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Invalid Product\",\n  \"price\": -10,\n  \"stock\": 100\n}"
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"name\": \"Invalid Product\",\n  \"price\": -10,\n  \"stock\": 100\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/products",
@@ -1132,7 +1189,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Incomplete Product\"\n}"
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"name\": \"Incomplete Product\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/products",
@@ -1140,6 +1197,46 @@
               "path": ["products"]
             },
             "description": "Test creating product without required fields (price, stock)."
+          }
+        },
+        {
+          "name": "Create Product - Missing userId",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error message mentions userId', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error.toLowerCase()).to.include('user');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Product Without User\",\n  \"price\": 99.99,\n  \"stock\": 100\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"]
+            },
+            "description": "Test creating product without userId."
           }
         }
       ],

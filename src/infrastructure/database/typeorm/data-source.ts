@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { UserEntity } from './UserEntity';
+import { ProductEntity } from './ProductEntity';
 import { env } from '@infrastructure/config/env';
 
 // Framework & Driver: TypeORM DataSource configuration and initialization
@@ -12,7 +13,7 @@ export function createTypeOrmDataSource(): DataSource {
     database: env.DB_NAME,
     username: env.DB_USER,
     password: env.DB_PASSWORD,
-    entities: [UserEntity],
+    entities: [UserEntity, ProductEntity],
     synchronize: true, // Automatically create/update database schema
     logging: env.NODE_ENV === 'development',
   });

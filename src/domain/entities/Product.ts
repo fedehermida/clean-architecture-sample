@@ -1,6 +1,7 @@
 // Domain Layer: Core business entity with business rules
 export interface ProductProps {
   id: string;
+  userId: string;
   name: string;
   description: string;
   price: number;
@@ -18,6 +19,7 @@ export class Product {
 
   static create(params: {
     id: string;
+    userId: string;
     name: string;
     description: string;
     price: number;
@@ -66,6 +68,10 @@ export class Product {
 
   get id() {
     return this.props.id;
+  }
+
+  get userId() {
+    return this.props.userId;
   }
 
   get name() {

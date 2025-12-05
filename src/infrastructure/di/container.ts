@@ -11,11 +11,14 @@ import { GetUserByEmail } from '@application/use-cases/GetUserByEmail';
 import { DeleteUser } from '@application/use-cases/DeleteUser';
 import { LoginUser } from '@application/use-cases/LoginUser';
 import { LogoutUser } from '@application/use-cases/LogoutUser';
+import { GetUserWithProducts } from '@application/use-cases/GetUserWithProducts';
 // Application Layer - Product Use Cases
 import { CreateProduct } from '@application/use-cases/CreateProduct';
 import { GetProductById } from '@application/use-cases/GetProductById';
 import { ListProducts } from '@application/use-cases/ListProducts';
 import { DeleteProduct } from '@application/use-cases/DeleteProduct';
+import { AssociateProductWithUser } from '@application/use-cases/AssociateProductWithUser';
+import { DisassociateProductFromUser } from '@application/use-cases/DisassociateProductFromUser';
 // Application Layer - Services
 import { AuthenticationService } from '@application/services/AuthenticationService';
 import { PasswordHasher } from '@application/services/PasswordHasher';
@@ -34,6 +37,9 @@ import { FirebaseUserRepository } from '@adapters/repositories/FirebaseUserRepos
 // Adapters Layer - Product Repositories
 import { ProductRepository } from '@domain/repositories/ProductRepository';
 import { InMemoryProductRepository } from '@adapters/repositories/InMemoryProductRepository';
+import { TypeOrmProductRepository } from '@adapters/repositories/TypeOrmProductRepository';
+import { MongoProductRepository } from '@adapters/repositories/MongoProductRepository';
+import { FirebaseProductRepository } from '@adapters/repositories/FirebaseProductRepository';
 
 // Auth Adapters
 import { InMemoryAuthAdapter } from '@adapters/services/InMemoryAuthAdapter';
@@ -70,7 +76,7 @@ export async function createContainer(): Promise<AppDependencies> {
 
   // User Repository Implementation Selection
   // Set REPOSITORY_TYPE environment variable to: 'inmemory', 'typeorm', 'mongoose', or 'firebase'
-  const repositoryType = env.REPOSITORY_TYPE;
+  const repositoryType = process.env.REPOSITORY_TYPE || 'inmemory';
 
   if (repositoryType === 'typeorm') {
     // PostgreSQL with TypeORM
@@ -78,21 +84,22 @@ export async function createContainer(): Promise<AppDependencies> {
     await initializeTypeOrmDataSource(dataSource);
     container.bind<DataSource>(TYPES.DataSource).toConstantValue(dataSource);
     container.bind<UserRepository>(TYPES.UserRepository).to(TypeOrmUserRepository);
+    container.bind<ProductRepository>(TYPES.ProductRepository).to(TypeOrmProductRepository);
   } else if (repositoryType === 'mongoose') {
-    // MongoDB with Mongoose ODM
+    // MongoDB with Mongoose ODM (products embedded in user documents)
     await connectMongoose();
     container.bind<UserRepository>(TYPES.UserRepository).to(MongoUserRepository);
+    container.bind<ProductRepository>(TYPES.ProductRepository).to(MongoProductRepository);
   } else if (repositoryType === 'firebase') {
-    // Firebase Firestore
+    // Firebase Firestore (products embedded in user documents)
     await import('@infrastructure/database/firestore/connection');
     container.bind<UserRepository>(TYPES.UserRepository).to(FirebaseUserRepository);
+    container.bind<ProductRepository>(TYPES.ProductRepository).to(FirebaseProductRepository);
   } else {
     // In-Memory Repository (default, no database required)
     container.bind<UserRepository>(TYPES.UserRepository).to(InMemoryUserRepository);
+    container.bind<ProductRepository>(TYPES.ProductRepository).to(InMemoryProductRepository);
   }
-
-  // Product Repository (InMemory for now - can be extended to TypeORM/Mongoose/Firebase)
-  container.bind<ProductRepository>(TYPES.ProductRepository).to(InMemoryProductRepository);
 
   // Password Hasher
   container.bind<PasswordHasher>(TYPES.PasswordHasher).to(FastPasswordHasher);
@@ -136,6 +143,7 @@ export async function createContainer(): Promise<AppDependencies> {
   const getUserById = new GetUserById(userRepository);
   const getUserByEmail = new GetUserByEmail(userRepository);
   const deleteUser = new DeleteUser(userRepository);
+  const getUserWithProducts = new GetUserWithProducts(userRepository, productRepository);
   const loginUser = new LoginUser(authService);
   const logoutUser = new LogoutUser(authService);
 
@@ -144,6 +152,11 @@ export async function createContainer(): Promise<AppDependencies> {
   const getProductById = new GetProductById(productRepository);
   const listProducts = new ListProducts(productRepository);
   const deleteProduct = new DeleteProduct(productRepository);
+  const associateProductWithUser = new AssociateProductWithUser(productRepository, userRepository);
+  const disassociateProductFromUser = new DisassociateProductFromUser(
+    productRepository,
+    userRepository,
+  );
 
   // ============================================================================
   // WIRE CONTROLLERS (plain classes, no DI decorators)
@@ -154,6 +167,9 @@ export async function createContainer(): Promise<AppDependencies> {
     getUserById,
     getUserByEmail,
     deleteUser,
+    getUserWithProducts,
+    associateProductWithUser,
+    disassociateProductFromUser,
     userRepository,
   );
 

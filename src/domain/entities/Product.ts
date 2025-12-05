@@ -1,4 +1,5 @@
 // Domain Layer: Core business entity with business rules
+// Products are independent entities - user associations are managed through a separate relationship
 export interface ProductProps {
   id: string;
   name: string;

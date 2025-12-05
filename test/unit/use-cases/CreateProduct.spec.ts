@@ -5,6 +5,7 @@ import { CreateProduct } from '@application/use-cases/CreateProduct';
 describe('CreateProduct Use Case', () => {
   let repo: InMemoryProductRepository;
   let usecase: CreateProduct;
+  const validUserId = '550e8400-e29b-41d4-a716-446655440000';
 
   beforeEach(() => {
     repo = new InMemoryProductRepository();
@@ -14,6 +15,7 @@ describe('CreateProduct Use Case', () => {
   describe('successful creation', () => {
     it('creates a product with valid input', async () => {
       const result = await usecase.execute({
+        userId: validUserId,
         name: 'Test Product',
         description: 'A great product',
         price: 99.99,
@@ -27,8 +29,9 @@ describe('CreateProduct Use Case', () => {
       }
     });
 
-    it('stores the product in the repository', async () => {
+    it('stores the product in the repository and associates with user', async () => {
       const result = await usecase.execute({
+        userId: validUserId,
         name: 'Stored Product',
         description: 'Test',
         price: 50,
@@ -40,11 +43,17 @@ describe('CreateProduct Use Case', () => {
         const found = await repo.findById(result.value.productId);
         expect(found).not.toBeNull();
         expect(found?.name).toBe('Stored Product');
+
+        // Verify product is associated with user
+        const userProducts = await repo.findByUserId(validUserId);
+        expect(userProducts.length).toBe(1);
+        expect(userProducts[0]?.id).toBe(result.value.productId);
       }
     });
 
     it('allows empty description', async () => {
       const result = await usecase.execute({
+        userId: validUserId,
         name: 'No Description',
         description: '',
         price: 25,
@@ -58,6 +67,7 @@ describe('CreateProduct Use Case', () => {
   describe('validation', () => {
     it('returns error for empty name', async () => {
       const result = await usecase.execute({
+        userId: validUserId,
         name: '',
         description: 'Test',
         price: 10,
@@ -72,6 +82,7 @@ describe('CreateProduct Use Case', () => {
 
     it('returns error for negative price', async () => {
       const result = await usecase.execute({
+        userId: validUserId,
         name: 'Test',
         description: '',
         price: -10,
@@ -86,6 +97,7 @@ describe('CreateProduct Use Case', () => {
 
     it('returns error for negative stock', async () => {
       const result = await usecase.execute({
+        userId: validUserId,
         name: 'Test',
         description: '',
         price: 10,
@@ -100,6 +112,7 @@ describe('CreateProduct Use Case', () => {
 
     it('returns error for non-integer stock', async () => {
       const result = await usecase.execute({
+        userId: validUserId,
         name: 'Test',
         description: '',
         price: 10,
@@ -109,6 +122,21 @@ describe('CreateProduct Use Case', () => {
       expect(result.ok).toBe(false);
       if (!result.ok) {
         expect(result.error.message).toContain('Stock must be an integer');
+      }
+    });
+
+    it('returns error for invalid userId format', async () => {
+      const result = await usecase.execute({
+        userId: 'invalid-uuid',
+        name: 'Test',
+        description: '',
+        price: 10,
+        stock: 5,
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.message).toContain('Invalid user ID format');
       }
     });
   });

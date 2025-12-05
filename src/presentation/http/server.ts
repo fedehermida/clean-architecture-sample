@@ -22,6 +22,9 @@ async function startServer() {
   app.post('/register', (req, res) => userController.register(req, res));
   app.get('/users', (req, res) => userController.getByEmail(req, res));
   app.get('/users/:id', (req, res) => userController.getById(req, res));
+  app.get('/users/:id/products', (req, res) => userController.getProducts(req, res));
+  app.post('/users/:id/products/:productId', (req, res) => userController.addProduct(req, res));
+  app.delete('/users/:id/products/:productId', (req, res) => userController.removeProduct(req, res));
   app.delete('/users/:id', (req, res) => userController.delete(req, res));
 
   // Auth routes

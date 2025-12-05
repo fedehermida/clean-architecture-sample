@@ -3,6 +3,9 @@ import { RegisterUser } from '@application/use-cases/RegisterUser';
 import { GetUserById } from '@application/use-cases/GetUserById';
 import { GetUserByEmail } from '@application/use-cases/GetUserByEmail';
 import { DeleteUser } from '@application/use-cases/DeleteUser';
+import { GetUserWithProducts } from '@application/use-cases/GetUserWithProducts';
+import { AssociateProductWithUser } from '@application/use-cases/AssociateProductWithUser';
+import { DisassociateProductFromUser } from '@application/use-cases/DisassociateProductFromUser';
 import { UserRepository } from '@domain/repositories/UserRepository';
 
 // Interface Adapter: HTTP controller adapting HTTP layer to Application layer (use cases)
@@ -12,6 +15,9 @@ export class UserController {
     private readonly getUserById: GetUserById,
     private readonly getUserByEmail: GetUserByEmail,
     private readonly deleteUser: DeleteUser,
+    private readonly getUserWithProducts: GetUserWithProducts,
+    private readonly associateProductWithUser: AssociateProductWithUser,
+    private readonly disassociateProductFromUser: DisassociateProductFromUser,
     private readonly userRepository: UserRepository,
   ) {}
 
@@ -52,6 +58,53 @@ export class UserController {
   async delete(req: HttpRequest, res: HttpResponse): Promise<void> {
     const userId = req.params['id'] as string;
     const result = await this.deleteUser.execute({ userId });
+    if (!result.ok) {
+      res.status(404).json({ error: result.error.message });
+      return;
+    }
+    res.status(204).send('');
+  }
+
+  async getProducts(req: HttpRequest, res: HttpResponse): Promise<void> {
+    const userId = req.params['id'];
+    if (!userId) {
+      res.status(400).json({ error: 'User ID is required' });
+      return;
+    }
+
+    const result = await this.getUserWithProducts.execute({ userId });
+    if (!result.ok) {
+      res.status(404).json({ error: result.error.message });
+      return;
+    }
+    res.status(200).json(result.value);
+  }
+
+  async addProduct(req: HttpRequest, res: HttpResponse): Promise<void> {
+    const userId = req.params['id'];
+    const productId = req.params['productId'];
+    if (!userId || !productId) {
+      res.status(400).json({ error: 'User ID and Product ID are required' });
+      return;
+    }
+
+    const result = await this.associateProductWithUser.execute({ userId, productId });
+    if (!result.ok) {
+      res.status(404).json({ error: result.error.message });
+      return;
+    }
+    res.status(201).json({ message: 'Product associated with user successfully' });
+  }
+
+  async removeProduct(req: HttpRequest, res: HttpResponse): Promise<void> {
+    const userId = req.params['id'];
+    const productId = req.params['productId'];
+    if (!userId || !productId) {
+      res.status(400).json({ error: 'User ID and Product ID are required' });
+      return;
+    }
+
+    const result = await this.disassociateProductFromUser.execute({ userId, productId });
     if (!result.ok) {
       res.status(404).json({ error: result.error.message });
       return;

@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 // Input validation schema
 export const CreateProductSchema = z.object({
+  userId: z.string().uuid('Invalid user ID format'),
   name: z.string().min(1, 'Name is required').max(255, 'Name is too long'),
   description: z.string().max(1000, 'Description is too long').default(''),
   price: z.number().positive('Price must be positive'),
@@ -14,7 +15,7 @@ export const CreateProductSchema = z.object({
 
 export type CreateProductDTO = z.infer<typeof CreateProductSchema>;
 
-// Application Layer: Use case for creating a new product
+// Application Layer: Use case for creating a new product and associating it with a user
 export class CreateProduct {
   constructor(private readonly productRepository: ProductRepository) {}
 
@@ -32,7 +33,10 @@ export class CreateProduct {
       stock: parse.data.stock,
     });
 
+    // Save the product (for RDBMS) and associate with user
+    // For document DBs, the association creates the embedded product
     await this.productRepository.save(product);
+    await this.productRepository.associateWithUser(product.id, parse.data.userId, product);
 
     return ok({ productId: product.id });
   }

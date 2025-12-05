@@ -18,8 +18,6 @@ const UserSchema = new Schema<UserDocument>(
     email: {
       type: String,
       required: true,
-      unique: true,
-      index: true,
     },
     passwordHash: {
       type: String,
@@ -37,9 +35,8 @@ const UserSchema = new Schema<UserDocument>(
   },
 );
 
-// Create indexes
+// Create indexes (unique constraint on email)
 UserSchema.index({ email: 1 }, { unique: true });
-UserSchema.index({ _id: 1 });
 
 export const UserModel: Model<UserDocument> = mongoose.model<UserDocument>('User', UserSchema);
 

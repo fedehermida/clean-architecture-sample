@@ -6,7 +6,6 @@ import { Product } from '@domain/entities/Product';
 describe('ListProducts Use Case', () => {
   let repo: InMemoryProductRepository;
   let usecase: ListProducts;
-  const userId = 'user-123';
 
   beforeEach(() => {
     repo = new InMemoryProductRepository();
@@ -26,7 +25,6 @@ describe('ListProducts Use Case', () => {
     it('returns all products', async () => {
       const product1 = Product.create({
         id: '1',
-        userId,
         name: 'Product 1',
         description: 'First',
         price: 10,
@@ -34,7 +32,6 @@ describe('ListProducts Use Case', () => {
       });
       const product2 = Product.create({
         id: '2',
-        userId,
         name: 'Product 2',
         description: 'Second',
         price: 20,
@@ -57,7 +54,6 @@ describe('ListProducts Use Case', () => {
     it('includes isInStock for each product', async () => {
       const inStock = Product.create({
         id: '1',
-        userId,
         name: 'In Stock',
         description: '',
         price: 10,
@@ -65,7 +61,6 @@ describe('ListProducts Use Case', () => {
       });
       const outOfStock = Product.create({
         id: '2',
-        userId,
         name: 'Out of Stock',
         description: '',
         price: 20,

@@ -1,15 +1,12 @@
 import 'reflect-metadata';
-import { Entity, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import { Entity, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 // Framework & Driver: TypeORM entity (database schema representation)
+// Products are independent entities - user association is through user_products join table
 @Entity('products')
 export class ProductEntity {
   @PrimaryColumn('uuid')
   id!: string;
-
-  @Column({ type: 'uuid', name: 'user_id' })
-  @Index()
-  userId!: string;
 
   @Column({ type: 'varchar' })
   name!: string;

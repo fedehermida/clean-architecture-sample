@@ -316,6 +316,85 @@
           }
         },
         {
+          "name": "Associate Product With User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 or 404', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 404]);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 201) {",
+                  "    pm.test('Response has success message', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.message).to.be.a('string');",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 404) {",
+                  "    pm.test('Error message is present', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.error).to.be.a('string');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "products", "{{productId}}"]
+            },
+            "description": "Associate an existing product with a user (many-to-many relationship).\n\nThis allows the same product to be associated with multiple users.\n\n**Path Parameters:**\n- `id` (string, required): User UUID\n- `productId` (string, required): Product UUID\n\n**Response (201 Created):**\n```json\n{\n  \"message\": \"Product associated with user successfully\"\n}\n```\n\n**Error Response (404 Not Found):**\n```json\n{\n  \"error\": \"User not found\"\n}\n```\nor\n```json\n{\n  \"error\": \"Product not found\"\n}\n```"
+          }
+        },
+        {
+          "name": "Disassociate Product From User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204 or 404', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([204, 404]);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 204) {",
+                  "    pm.test('Response body is empty', function () {",
+                  "        pm.expect(pm.response.text()).to.be.empty;",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 404) {",
+                  "    pm.test('Error message is present', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.error).to.be.a('string');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "products", "{{productId}}"]
+            },
+            "description": "Remove the association between a product and a user (many-to-many relationship).\n\nThis does not delete the product itself, only removes the association with the user.\n\n**Path Parameters:**\n- `id` (string, required): User UUID\n- `productId` (string, required): Product UUID\n\n**Response (204 No Content):** Empty response body\n\n**Error Response (404 Not Found):**\n```json\n{\n  \"error\": \"User not found\"\n}\n```\nor\n```json\n{\n  \"error\": \"Product not found\"\n}\n```"
+          }
+        },
+        {
           "name": "Delete User",
           "event": [
             {
@@ -359,7 +438,7 @@
           }
         }
       ],
-      "description": "User management endpoints (CRUD operations)\n\n**Endpoints:**\n- POST /register - Create new user\n- GET /users/:id - Get user by ID\n- GET /users/:id/products - Get user with their products\n- GET /users?email=... - Get user by email\n- DELETE /users/:id - Delete user"
+      "description": "User management endpoints (CRUD operations)\n\n**Endpoints:**\n- POST /register - Create new user\n- GET /users/:id - Get user by ID\n- GET /users/:id/products - Get user with their products\n- POST /users/:id/products/:productId - Associate product with user\n- DELETE /users/:id/products/:productId - Disassociate product from user\n- GET /users?email=... - Get user by email\n- DELETE /users/:id - Delete user"
     },
     {
       "name": "Authentication",

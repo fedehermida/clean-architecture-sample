@@ -17,6 +17,8 @@ import { CreateProduct } from '@application/use-cases/CreateProduct';
 import { GetProductById } from '@application/use-cases/GetProductById';
 import { ListProducts } from '@application/use-cases/ListProducts';
 import { DeleteProduct } from '@application/use-cases/DeleteProduct';
+import { AssociateProductWithUser } from '@application/use-cases/AssociateProductWithUser';
+import { DisassociateProductFromUser } from '@application/use-cases/DisassociateProductFromUser';
 // Application Layer - Services
 import { AuthenticationService } from '@application/services/AuthenticationService';
 import { PasswordHasher } from '@application/services/PasswordHasher';
@@ -74,7 +76,7 @@ export async function createContainer(): Promise<AppDependencies> {
 
   // User Repository Implementation Selection
   // Set REPOSITORY_TYPE environment variable to: 'inmemory', 'typeorm', 'mongoose', or 'firebase'
-  const repositoryType = env.REPOSITORY_TYPE;
+  const repositoryType = process.env.REPOSITORY_TYPE || 'inmemory';
 
   if (repositoryType === 'typeorm') {
     // PostgreSQL with TypeORM
@@ -150,6 +152,11 @@ export async function createContainer(): Promise<AppDependencies> {
   const getProductById = new GetProductById(productRepository);
   const listProducts = new ListProducts(productRepository);
   const deleteProduct = new DeleteProduct(productRepository);
+  const associateProductWithUser = new AssociateProductWithUser(productRepository, userRepository);
+  const disassociateProductFromUser = new DisassociateProductFromUser(
+    productRepository,
+    userRepository,
+  );
 
   // ============================================================================
   // WIRE CONTROLLERS (plain classes, no DI decorators)
@@ -161,6 +168,8 @@ export async function createContainer(): Promise<AppDependencies> {
     getUserByEmail,
     deleteUser,
     getUserWithProducts,
+    associateProductWithUser,
+    disassociateProductFromUser,
     userRepository,
   );
 

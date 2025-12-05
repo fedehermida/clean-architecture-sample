@@ -29,7 +29,7 @@ describe('CreateProduct Use Case', () => {
       }
     });
 
-    it('stores the product in the repository', async () => {
+    it('stores the product in the repository and associates with user', async () => {
       const result = await usecase.execute({
         userId: validUserId,
         name: 'Stored Product',
@@ -43,7 +43,11 @@ describe('CreateProduct Use Case', () => {
         const found = await repo.findById(result.value.productId);
         expect(found).not.toBeNull();
         expect(found?.name).toBe('Stored Product');
-        expect(found?.userId).toBe(validUserId);
+
+        // Verify product is associated with user
+        const userProducts = await repo.findByUserId(validUserId);
+        expect(userProducts.length).toBe(1);
+        expect(userProducts[0]?.id).toBe(result.value.productId);
       }
     });
 

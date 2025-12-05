@@ -8,7 +8,6 @@ describe('GetProductById Use Case', () => {
   let usecase: GetProductById;
 
   const productId = '550e8400-e29b-41d4-a716-446655440001';
-  const userId = '550e8400-e29b-41d4-a716-446655440000';
   const nonExistentId = '550e8400-e29b-41d4-a716-446655440099';
 
   beforeEach(() => {
@@ -20,7 +19,6 @@ describe('GetProductById Use Case', () => {
     it('returns product data when product exists', async () => {
       const product = Product.create({
         id: productId,
-        userId,
         name: 'Test Product',
         description: 'A test product',
         price: 99.99,
@@ -44,7 +42,6 @@ describe('GetProductById Use Case', () => {
     it('returns isInStock as false when stock is 0', async () => {
       const product = Product.create({
         id: productId,
-        userId,
         name: 'Out of Stock',
         description: '',
         price: 50,

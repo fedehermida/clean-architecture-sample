@@ -2,13 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { Product } from '@domain/entities/Product';
 
 describe('Product Entity', () => {
-  const userId = 'user-123';
-
   describe('creation', () => {
     it('creates a product with all properties', () => {
       const product = Product.create({
         id: '123',
-        userId,
         name: 'Test Product',
         description: 'A test product',
         price: 99.99,
@@ -16,7 +13,6 @@ describe('Product Entity', () => {
       });
 
       expect(product.id).toBe('123');
-      expect(product.userId).toBe(userId);
       expect(product.name).toBe('Test Product');
       expect(product.description).toBe('A test product');
       expect(product.price).toBe(99.99);
@@ -28,7 +24,6 @@ describe('Product Entity', () => {
     it('sets createdAt and updatedAt to the same time when not provided', () => {
       const product = Product.create({
         id: '123',
-        userId,
         name: 'Test',
         description: '',
         price: 10,
@@ -43,7 +38,6 @@ describe('Product Entity', () => {
     it('returns true when stock > 0', () => {
       const product = Product.create({
         id: '1',
-        userId,
         name: 'In Stock',
         description: '',
         price: 10,
@@ -56,7 +50,6 @@ describe('Product Entity', () => {
     it('returns false when stock is 0', () => {
       const product = Product.create({
         id: '1',
-        userId,
         name: 'Out of Stock',
         description: '',
         price: 10,
@@ -71,7 +64,6 @@ describe('Product Entity', () => {
     it('returns true when stock is sufficient', () => {
       const product = Product.create({
         id: '1',
-        userId,
         name: 'Test',
         description: '',
         price: 10,
@@ -85,7 +77,6 @@ describe('Product Entity', () => {
     it('returns false when stock is insufficient', () => {
       const product = Product.create({
         id: '1',
-        userId,
         name: 'Test',
         description: '',
         price: 10,
@@ -100,7 +91,6 @@ describe('Product Entity', () => {
     it('returns new product with reduced stock', () => {
       const product = Product.create({
         id: '1',
-        userId,
         name: 'Test',
         description: '',
         price: 10,
@@ -116,7 +106,6 @@ describe('Product Entity', () => {
     it('throws error when insufficient stock', () => {
       const product = Product.create({
         id: '1',
-        userId,
         name: 'Test',
         description: '',
         price: 10,
@@ -131,7 +120,6 @@ describe('Product Entity', () => {
     it('returns new product with increased stock', () => {
       const product = Product.create({
         id: '1',
-        userId,
         name: 'Test',
         description: '',
         price: 10,

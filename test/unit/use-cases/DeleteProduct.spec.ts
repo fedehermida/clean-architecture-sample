@@ -8,7 +8,6 @@ describe('DeleteProduct Use Case', () => {
   let usecase: DeleteProduct;
 
   const productId = '550e8400-e29b-41d4-a716-446655440001';
-  const userId = '550e8400-e29b-41d4-a716-446655440000';
   const nonExistentId = '550e8400-e29b-41d4-a716-446655440099';
 
   beforeEach(() => {
@@ -20,7 +19,6 @@ describe('DeleteProduct Use Case', () => {
     it('deletes an existing product', async () => {
       const product = Product.create({
         id: productId,
-        userId,
         name: 'To Delete',
         description: '',
         price: 10,
@@ -36,7 +34,6 @@ describe('DeleteProduct Use Case', () => {
     it('product is no longer findable after deletion', async () => {
       const product = Product.create({
         id: productId,
-        userId,
         name: 'To Delete',
         description: '',
         price: 10,

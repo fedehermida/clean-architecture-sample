@@ -1,10 +1,56 @@
 {
   "info": {
     "name": "Clean Architecture API",
-    "description": "API collection for Clean Architecture TypeScript project.\n\nDemonstrates:\n- User Management (CRUD)\n- Authentication (Login/Logout)\n- Product Management (CRUD)\n\nSwappable infrastructure:\n- Repositories: InMemory, TypeORM, Mongoose, Firebase\n- Auth Providers: InMemory, Firebase, JWT\n- HTTP Servers: Express, Fastify",
+    "description": "API collection for Clean Architecture TypeScript project.\n\nDemonstrates:\n- User Management (CRUD)\n- Authentication (Login/Logout/Me)\n- Product Management (CRUD)\n\nSwappable infrastructure:\n- Repositories: InMemory, TypeORM, Mongoose, Firebase\n- Auth Providers: InMemory, Firebase, JWT\n- HTTP Servers: Express, Fastify\n\n## Getting Started\n1. Import this collection and the environment file\n2. Start the server: `npm run dev`\n3. Run requests in order: Register → Login → other endpoints\n\n## Authentication\nMost endpoints are public. Auth endpoints require Bearer token in Authorization header.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has healthy status', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.eql('healthy');",
+                  "});",
+                  "",
+                  "pm.test('Response has timestamp', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.timestamp).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('Response time is acceptable', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Check API health and database connectivity.\n\n**Response (200 OK):**\n```json\n{\n  \"status\": \"healthy\",\n  \"timestamp\": \"2024-12-05T10:30:00.000Z\",\n  \"database\": \"connected\"\n}\n```\n\n**Response (503 Service Unavailable):**\n```json\n{\n  \"status\": \"unhealthy\",\n  \"timestamp\": \"2024-12-05T10:30:00.000Z\",\n  \"database\": \"disconnected\",\n  \"error\": \"Error message\"\n}\n```"
+          }
+        }
+      ],
+      "description": "Health check endpoint to verify API and database connectivity"
+    },
     {
       "name": "User Management",
       "item": [
@@ -15,9 +61,78 @@
               "listen": "test",
               "script": {
                 "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has userId', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.userId).to.be.a('string');",
+                  "    pm.expect(jsonData.userId).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);",
+                  "});",
+                  "",
                   "if (pm.response.code === 201) {",
                   "    const jsonData = pm.response.json();",
                   "    pm.collectionVariables.set('userId', jsonData.userId);",
+                  "    pm.environment.set('userId', jsonData.userId);",
+                  "    console.log('User ID saved:', jsonData.userId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generate unique email to avoid conflicts",
+                  "const timestamp = Date.now();",
+                  "const uniqueEmail = `user_${timestamp}@example.com`;",
+                  "pm.variables.set('dynamicEmail', uniqueEmail);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{dynamicEmail}}\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["register"]
+            },
+            "description": "Register a new user with email and password.\n\n**Request Body:**\n- `email` (string, required): Valid email address\n- `password` (string, required): Minimum 8 characters\n\n**Response (201 Created):**\n```json\n{\n  \"userId\": \"550e8400-e29b-41d4-a716-446655440000\"\n}\n```\n\n**Error Response (400 Bad Request):**\n```json\n{\n  \"error\": \"Email already in use\"\n}\n```\nor\n```json\n{\n  \"error\": \"Invalid email format, Password must be at least 8 characters\"\n}\n```"
+          }
+        },
+        {
+          "name": "Register User (Static Email)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 or 400 (already exists)', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 400]);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 201) {",
+                  "    pm.test('Response has userId', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.userId).to.be.a('string');",
+                  "    });",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('userId', jsonData.userId);",
+                  "    pm.environment.set('userId', jsonData.userId);",
                   "    console.log('User ID saved:', jsonData.userId);",
                   "}"
                 ],
@@ -35,18 +150,51 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/register",
               "host": ["{{baseUrl}}"],
               "path": ["register"]
             },
-            "description": "Register a new user with email and password (min 8 characters)"
+            "description": "Register a user with a static email (useful for login testing).\n\nUse this to create a known user, then use the Login endpoint with the same credentials."
           }
         },
         {
           "name": "Get User By ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 or 404', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Response has user data', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.id).to.be.a('string');",
+                  "        pm.expect(jsonData.email).to.be.a('string');",
+                  "    });",
+                  "    ",
+                  "    pm.test('Email format is valid', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.email).to.match(/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/);",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 404) {",
+                  "    pm.test('Error message is present', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.error).to.be.a('string');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
@@ -55,30 +203,93 @@
               "host": ["{{baseUrl}}"],
               "path": ["users", "{{userId}}"]
             },
-            "description": "Retrieve a user by their UUID"
+            "description": "Retrieve a user by their UUID.\n\n**Path Parameters:**\n- `id` (string, required): User UUID\n\n**Response (200 OK):**\n```json\n{\n  \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"email\": \"user@example.com\",\n  \"createdAt\": \"2024-12-05T10:30:00.000Z\"\n}\n```\n\n**Error Response (404 Not Found):**\n```json\n{\n  \"error\": \"User not found or invalid UUID format\"\n}\n```"
           }
         },
         {
           "name": "Get User By Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 or 404', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Response has user data', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.id).to.be.a('string');",
+                  "        pm.expect(jsonData.email).to.eql('test@example.com');",
+                  "    });",
+                  "    ",
+                  "    // Save userId for subsequent requests",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('userId', jsonData.id);",
+                  "    pm.environment.set('userId', jsonData.id);",
+                  "}",
+                  "",
+                  "if (pm.response.code === 404) {",
+                  "    pm.test('Error message is present', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.error).to.be.a('string');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/users?email=user@example.com",
+              "raw": "{{baseUrl}}/users?email=test@example.com",
               "host": ["{{baseUrl}}"],
               "path": ["users"],
               "query": [
                 {
                   "key": "email",
-                  "value": "user@example.com"
+                  "value": "test@example.com"
                 }
               ]
             },
-            "description": "Retrieve a user by their email address"
+            "description": "Retrieve a user by their email address.\n\n**Query Parameters:**\n- `email` (string, required): User's email address\n\n**Response (200 OK):**\n```json\n{\n  \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"email\": \"user@example.com\",\n  \"createdAt\": \"2024-12-05T10:30:00.000Z\"\n}\n```\n\n**Error Response (404 Not Found):**\n```json\n{\n  \"error\": \"User not found\"\n}\n```"
           }
         },
         {
           "name": "Delete User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204 or 404', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([204, 404]);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 204) {",
+                  "    pm.test('Response body is empty', function () {",
+                  "        pm.expect(pm.response.text()).to.be.empty;",
+                  "    });",
+                  "    // Clear stored userId",
+                  "    pm.collectionVariables.unset('userId');",
+                  "    pm.environment.unset('userId');",
+                  "    console.log('User deleted, userId cleared');",
+                  "}",
+                  "",
+                  "if (pm.response.code === 404) {",
+                  "    pm.test('Error message is present', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.error).to.be.a('string');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "DELETE",
             "header": [],
@@ -87,11 +298,11 @@
               "host": ["{{baseUrl}}"],
               "path": ["users", "{{userId}}"]
             },
-            "description": "Delete a user by their UUID"
+            "description": "Delete a user by their UUID.\n\n**Path Parameters:**\n- `id` (string, required): User UUID\n\n**Response (204 No Content):** Empty response body\n\n**Error Response (404 Not Found):**\n```json\n{\n  \"error\": \"User not found\"\n}\n```"
           }
         }
       ],
-      "description": "User management endpoints (CRUD operations)"
+      "description": "User management endpoints (CRUD operations)\n\n**Endpoints:**\n- POST /register - Create new user\n- GET /users/:id - Get user by ID\n- GET /users?email=... - Get user by email\n- DELETE /users/:id - Delete user"
     },
     {
       "name": "Authentication",
@@ -103,10 +314,33 @@
               "listen": "test",
               "script": {
                 "exec": [
+                  "pm.test('Status code is 200 or 401', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 401]);",
+                  "});",
+                  "",
                   "if (pm.response.code === 200) {",
+                  "    pm.test('Response has token', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.token).to.be.a('string');",
+                  "        pm.expect(jsonData.token.length).to.be.above(0);",
+                  "    });",
+                  "    ",
+                  "    pm.test('Response has expiresAt', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.expiresAt).to.be.a('string');",
+                  "    });",
+                  "    ",
                   "    const jsonData = pm.response.json();",
                   "    pm.collectionVariables.set('authToken', jsonData.token);",
+                  "    pm.environment.set('authToken', jsonData.token);",
                   "    console.log('Auth token saved');",
+                  "}",
+                  "",
+                  "if (pm.response.code === 401) {",
+                  "    pm.test('Error message is present', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.error).to.be.a('string');",
+                  "    });",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -123,18 +357,51 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "login"]
             },
-            "description": "Authenticate user and receive a token"
+            "description": "Authenticate user and receive an authentication token.\n\n**Request Body:**\n- `email` (string, required): Valid email address\n- `password` (string, required): User's password\n\n**Response (200 OK):**\n```json\n{\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"expiresAt\": \"2024-12-05T11:30:00.000Z\"\n}\n```\n\n**Error Response (401 Unauthorized):**\n```json\n{\n  \"error\": \"Invalid email or password\"\n}\n```\n\n**Note:** Register a user first before attempting to login."
           }
         },
         {
           "name": "Get Current User (Me)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 or 401', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 401]);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Response has user id', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.id).to.be.a('string');",
+                  "    });",
+                  "    ",
+                  "    pm.test('Response has user email', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.email).to.be.a('string');",
+                  "        pm.expect(jsonData.email).to.match(/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/);",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 401) {",
+                  "    pm.test('Error message is present', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.error).to.be.a('string');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [
@@ -148,7 +415,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["auth", "me"]
             },
-            "description": "Get the currently authenticated user's information"
+            "description": "Get the currently authenticated user's information.\n\n**Headers Required:**\n- `Authorization: Bearer <token>`\n\n**Response (200 OK):**\n```json\n{\n  \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"email\": \"user@example.com\"\n}\n```\n\n**Error Response (401 Unauthorized):**\n```json\n{\n  \"error\": \"Invalid or expired token\"\n}\n```\nor\n```json\n{\n  \"error\": \"No token provided\"\n}\n```"
           }
         },
         {
@@ -158,9 +425,27 @@
               "listen": "test",
               "script": {
                 "exec": [
+                  "pm.test('Status code is 200 or 400', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
+                  "});",
+                  "",
                   "if (pm.response.code === 200) {",
+                  "    pm.test('Response has success message', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.message).to.be.a('string');",
+                  "    });",
+                  "    ",
+                  "    // Clear stored token",
                   "    pm.collectionVariables.unset('authToken');",
+                  "    pm.environment.unset('authToken');",
                   "    console.log('Auth token cleared');",
+                  "}",
+                  "",
+                  "if (pm.response.code === 400) {",
+                  "    pm.test('Error message is present', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.error).to.be.a('string');",
+                  "    });",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -180,11 +465,11 @@
               "host": ["{{baseUrl}}"],
               "path": ["auth", "logout"]
             },
-            "description": "Invalidate the current authentication token"
+            "description": "Invalidate the current authentication token (logout).\n\n**Headers Required:**\n- `Authorization: Bearer <token>`\n\n**Response (200 OK):**\n```json\n{\n  \"message\": \"Logged out successfully\"\n}\n```\n\n**Error Response (400 Bad Request):**\n```json\n{\n  \"error\": \"No token provided\"\n}\n```"
           }
         }
       ],
-      "description": "Authentication endpoints (Login/Logout/Me)"
+      "description": "Authentication endpoints (Login/Logout/Me)\n\n**Flow:**\n1. Register a user first (User Management → Register)\n2. Login to get auth token\n3. Use token for authenticated endpoints (/auth/me, /auth/logout)\n\n**Headers:**\nAuthenticated endpoints require: `Authorization: Bearer <token>`"
     },
     {
       "name": "Product Management",
@@ -196,9 +481,20 @@
               "listen": "test",
               "script": {
                 "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has productId', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.productId).to.be.a('string');",
+                  "    pm.expect(jsonData.productId).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);",
+                  "});",
+                  "",
                   "if (pm.response.code === 201) {",
                   "    const jsonData = pm.response.json();",
                   "    pm.collectionVariables.set('productId', jsonData.productId);",
+                  "    pm.environment.set('productId', jsonData.productId);",
                   "    console.log('Product ID saved:', jsonData.productId);",
                   "}"
                 ],
@@ -223,11 +519,142 @@
               "host": ["{{baseUrl}}"],
               "path": ["products"]
             },
-            "description": "Create a new product"
+            "description": "Create a new product.\n\n**Request Body:**\n- `name` (string, required): Product name (1-255 characters)\n- `description` (string, optional): Product description (max 1000 characters)\n- `price` (number, required): Price must be positive (minimum 0.01)\n- `stock` (integer, required): Available stock quantity (minimum 0)\n\n**Response (201 Created):**\n```json\n{\n  \"productId\": \"550e8400-e29b-41d4-a716-446655440001\"\n}\n```\n\n**Error Response (400 Bad Request):**\n```json\n{\n  \"error\": \"Validation error message\"\n}\n```"
+          }
+        },
+        {
+          "name": "Create Product (Minimal)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has productId', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.productId).to.be.a('string');",
+                  "});",
+                  "",
+                  "if (pm.response.code === 201) {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('productId', jsonData.productId);",
+                  "    pm.environment.set('productId', jsonData.productId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Basic Product\",\n  \"price\": 19.99,\n  \"stock\": 50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"]
+            },
+            "description": "Create a product with only required fields (no description)."
+          }
+        },
+        {
+          "name": "Create Product (Out of Stock)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 201) {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('outOfStockProductId', jsonData.productId);",
+                  "    pm.environment.set('outOfStockProductId', jsonData.productId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Out of Stock Item\",\n  \"description\": \"This product has no stock available\",\n  \"price\": 49.99,\n  \"stock\": 0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"]
+            },
+            "description": "Create a product with zero stock to test isInStock field."
           }
         },
         {
           "name": "List All Products",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Products have required fields', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.length > 0) {",
+                  "        const product = jsonData[0];",
+                  "        pm.expect(product).to.have.property('id');",
+                  "        pm.expect(product).to.have.property('name');",
+                  "        pm.expect(product).to.have.property('price');",
+                  "        pm.expect(product).to.have.property('stock');",
+                  "        pm.expect(product).to.have.property('isInStock');",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test('isInStock is boolean', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.length > 0) {",
+                  "        pm.expect(jsonData[0].isInStock).to.be.a('boolean');",
+                  "    }",
+                  "});",
+                  "",
+                  "// Save first product ID if available",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.length > 0 && !pm.collectionVariables.get('productId')) {",
+                  "    pm.collectionVariables.set('productId', jsonData[0].id);",
+                  "    pm.environment.set('productId', jsonData[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
@@ -236,11 +663,56 @@
               "host": ["{{baseUrl}}"],
               "path": ["products"]
             },
-            "description": "Retrieve all products"
+            "description": "Retrieve all products.\n\n**Response (200 OK):**\n```json\n[\n  {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440001\",\n    \"name\": \"Sample Product\",\n    \"price\": 99.99,\n    \"stock\": 100,\n    \"isInStock\": true\n  }\n]\n```"
           }
         },
         {
           "name": "Get Product By ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 or 404', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Response has product data', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.id).to.be.a('string');",
+                  "        pm.expect(jsonData.name).to.be.a('string');",
+                  "        pm.expect(jsonData.price).to.be.a('number');",
+                  "        pm.expect(jsonData.stock).to.be.a('number');",
+                  "    });",
+                  "    ",
+                  "    pm.test('Price is positive', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.price).to.be.above(0);",
+                  "    });",
+                  "    ",
+                  "    pm.test('Stock is non-negative', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.stock).to.be.at.least(0);",
+                  "    });",
+                  "    ",
+                  "    pm.test('isInStock matches stock value', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.isInStock).to.eql(jsonData.stock > 0);",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 404) {",
+                  "    pm.test('Error message is present', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.error).to.be.a('string');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
@@ -249,11 +721,41 @@
               "host": ["{{baseUrl}}"],
               "path": ["products", "{{productId}}"]
             },
-            "description": "Retrieve a product by its UUID"
+            "description": "Retrieve a product by its UUID.\n\n**Path Parameters:**\n- `id` (string, required): Product UUID\n\n**Response (200 OK):**\n```json\n{\n  \"id\": \"550e8400-e29b-41d4-a716-446655440001\",\n  \"name\": \"Sample Product\",\n  \"description\": \"A great product\",\n  \"price\": 99.99,\n  \"stock\": 100,\n  \"isInStock\": true,\n  \"createdAt\": \"2024-12-05T10:30:00.000Z\",\n  \"updatedAt\": \"2024-12-05T10:30:00.000Z\"\n}\n```\n\n**Error Response (404 Not Found):**\n```json\n{\n  \"error\": \"Product not found\"\n}\n```"
           }
         },
         {
           "name": "Delete Product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204 or 404', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([204, 404]);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 204) {",
+                  "    pm.test('Response body is empty', function () {",
+                  "        pm.expect(pm.response.text()).to.be.empty;",
+                  "    });",
+                  "    // Clear stored productId",
+                  "    pm.collectionVariables.unset('productId');",
+                  "    pm.environment.unset('productId');",
+                  "    console.log('Product deleted, productId cleared');",
+                  "}",
+                  "",
+                  "if (pm.response.code === 404) {",
+                  "    pm.test('Error message is present', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.error).to.be.a('string');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "DELETE",
             "header": [],
@@ -262,30 +764,417 @@
               "host": ["{{baseUrl}}"],
               "path": ["products", "{{productId}}"]
             },
-            "description": "Delete a product by its UUID"
+            "description": "Delete a product by its UUID.\n\n**Path Parameters:**\n- `id` (string, required): Product UUID\n\n**Response (204 No Content):** Empty response body\n\n**Error Response (404 Not Found):**\n```json\n{\n  \"error\": \"Product not found\"\n}\n```"
           }
         }
       ],
-      "description": "Product management endpoints (CRUD operations)"
+      "description": "Product management endpoints (CRUD operations)\n\n**Endpoints:**\n- POST /products - Create new product\n- GET /products - List all products\n- GET /products/:id - Get product by ID\n- DELETE /products/:id - Delete product\n\n**Product Fields:**\n- `name`: Product name (required, 1-255 chars)\n- `description`: Product description (optional, max 1000 chars)\n- `price`: Price (required, positive number)\n- `stock`: Stock quantity (required, non-negative integer)\n- `isInStock`: Computed field (stock > 0)"
     },
     {
-      "name": "Health Check",
+      "name": "Error Scenarios",
       "item": [
         {
-          "name": "Health Check",
+          "name": "Register - Invalid Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error message mentions email', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error.toLowerCase()).to.include('email');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"invalid-email\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["register"]
+            },
+            "description": "Test registration with invalid email format."
+          }
+        },
+        {
+          "name": "Register - Short Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error message mentions password', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error.toLowerCase()).to.include('password');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"short\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["register"]
+            },
+            "description": "Test registration with password less than 8 characters."
+          }
+        },
+        {
+          "name": "Login - Wrong Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Error message is present', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.be.a('string');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"wrongpassword\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Test login with incorrect password."
+          }
+        },
+        {
+          "name": "Login - Non-existent User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Error message is present', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.be.a('string');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nonexistent@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Test login with non-existent user."
+          }
+        },
+        {
+          "name": "Auth Me - No Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Error message is present', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.be.a('string');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/health",
+              "raw": "{{baseUrl}}/auth/me",
               "host": ["{{baseUrl}}"],
-              "path": ["health"]
+              "path": ["auth", "me"]
             },
-            "description": "Check API health and database connectivity"
+            "description": "Test accessing /auth/me without authentication token."
+          }
+        },
+        {
+          "name": "Auth Me - Invalid Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Error message is present', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.be.a('string');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid-token-here"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Test accessing /auth/me with invalid token."
+          }
+        },
+        {
+          "name": "Get User - Invalid UUID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Error message is present', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.be.a('string');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/not-a-valid-uuid",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "not-a-valid-uuid"]
+            },
+            "description": "Test getting user with invalid UUID format."
+          }
+        },
+        {
+          "name": "Get Product - Non-existent",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Error message is present', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.be.a('string');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/00000000-0000-0000-0000-000000000000",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "00000000-0000-0000-0000-000000000000"]
+            },
+            "description": "Test getting non-existent product."
+          }
+        },
+        {
+          "name": "Create Product - Invalid Price",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error message is present', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.be.a('string');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Invalid Product\",\n  \"price\": -10,\n  \"stock\": 100\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"]
+            },
+            "description": "Test creating product with negative price."
+          }
+        },
+        {
+          "name": "Create Product - Missing Fields",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error message is present', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.be.a('string');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Incomplete Product\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"]
+            },
+            "description": "Test creating product without required fields (price, stock)."
           }
         }
       ],
-      "description": "Health check endpoint"
+      "description": "Test error handling and validation scenarios.\n\nThese requests are designed to fail and verify proper error responses."
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global pre-request script",
+          "// Logs the request being made for debugging",
+          "console.log('Request:', pm.info.requestName);"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test script",
+          "pm.test('Response time is acceptable', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+          "});",
+          "",
+          "pm.test('Content-Type header is present', function () {",
+          "    if (pm.response.code !== 204) {",
+          "        pm.response.to.have.header('Content-Type');",
+          "    }",
+          "});"
+        ]
+      }
     }
   ],
   "variable": [
@@ -306,6 +1195,11 @@
     },
     {
       "key": "productId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "outOfStockProductId",
       "value": "",
       "type": "string"
     }

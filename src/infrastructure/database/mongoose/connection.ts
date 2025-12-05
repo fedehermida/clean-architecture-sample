@@ -4,10 +4,10 @@ import { env } from '@infrastructure/config/env';
 
 // Framework & Driver: Mongoose connection configuration and initialization
 export async function connectMongoose(): Promise<void> {
-  const connectionString =
-    env.MONGO_URI ?? `mongodb://${env.MONGO_HOST}:${env.MONGO_PORT}`;
-
-  const fullConnectionString = `${connectionString}/${env.MONGO_DB_NAME}`;
+  // If MONGO_URI is provided, use it directly (it should include the database name)
+  // Otherwise, build the connection string from individual components
+  const fullConnectionString =
+    env.MONGO_URI ?? `mongodb://${env.MONGO_HOST}:${env.MONGO_PORT}/${env.MONGO_DB_NAME}`;
 
   try {
     await mongoose.connect(fullConnectionString, {
